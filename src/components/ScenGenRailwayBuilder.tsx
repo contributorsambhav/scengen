@@ -1,7 +1,9 @@
 "use client"
 
 import { Download, FileDown, GitBranch, MapPin, Play, Plus, Save, Settings, Train, Trash2 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+import Presets from './Presets';
 
 // Types
 interface Station {
@@ -9,6 +11,18 @@ interface Station {
   name: string;
   x: number;
   y: number;
+}
+
+interface PresetConfig {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  stations: Omit<Station, 'id'>[];
+  sections: Omit<Section, 'id' | 'from' | 'to'>[];
+  connections: Array<{ fromIndex: number; toIndex: number }>;
+  width: number;
+  height: number;
 }
 
 interface Section {
@@ -58,12 +72,28 @@ export default function ScenGenRailwayBuilder() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedStation, setDraggedStation] = useState<number | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 }); // default values
+
 
   // Get station position
   const getStationPos = (stationId: number) => {
     const station = stations.find(s => s.id === stationId);
     return station || { x: 0, y: 0 };
   };
+
+  useLayoutEffect(() => {
+    const updateSize = () => {
+      if (canvasRef.current) {
+        setCanvasSize({
+          width: canvasRef.current.offsetWidth,
+          height: canvasRef.current.offsetHeight,
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   // Handle canvas click
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -165,6 +195,49 @@ export default function ScenGenRailwayBuilder() {
     }
   };
 
+
+  // Add this function inside ScenGenRailwayBuilder component
+const handleAddPreset = (preset: PresetConfig, x: number, y: number) => {
+  // Calculate next available IDs
+  const nextStationId = Math.max(...stations.map(s => s.id), 0) + 1;
+  const nextSectionId = Math.max(...sections.map(s => s.id), 0) + 1;
+  
+  // Create stations with proper IDs and positions
+  const newStations: Station[] = preset.stations.map((station, index) => ({
+    id: nextStationId + index,
+    name: `${station.name}_${nextStationId + index}`,
+    x: x + station.x,
+    y: y + station.y
+  }));
+  
+  // Create sections with proper IDs and station references
+  const newSections: Section[] = preset.sections.map((section, index) => {
+    const connection = preset.connections[index];
+    return {
+      id: nextSectionId + index,
+      from: nextStationId + connection.fromIndex,
+      to: nextStationId + connection.toIndex,
+      distance: section.distance,
+      maxSpeed: section.maxSpeed,
+      bidirectional: section.bidirectional
+    };
+  });
+  
+  // Update state
+  setStations([...stations, ...newStations]);
+  setSections([...sections, ...newSections]);
+  
+  // Update existing trains to include new sections
+  setTrains(trains.map(train => ({
+    ...train,
+    allowedSections: {
+      ...train.allowedSections,
+      ...newSections.reduce((acc, section) => ({ ...acc, [section.id]: 0 }), {})
+    }
+  })));
+}
+
+;
   // Add train
   const addTrain = () => {
     if (stations.length < 2) {
@@ -896,6 +969,12 @@ export default function ScenGenRailwayBuilder() {
           ))}
         </div>
       </div>
+
+ <Presets
+      onAddPreset={handleAddPreset}
+      canvasWidth={canvasSize.width}
+      canvasHeight={canvasSize.height}
+    />
     </div>
   );
 }
