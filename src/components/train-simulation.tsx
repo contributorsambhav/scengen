@@ -3,9 +3,8 @@
 import { Activity, ChevronLeft, ChevronRight, Clock, Gauge, MapPin, Navigation, Pause, Play, RotateCcw, Square, Train, TrendingUp, Upload, Zap } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import CenterPane from './CenterPane';
 import LeftPane from './LeftPane';
-import RightPane from './RightPane';
+import RightPane from './right-pane';
 
 const TrainSimulation = () => {
   const [simulationData, setSimulationData] = useState(null);
