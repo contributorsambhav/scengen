@@ -1,12 +1,10 @@
-import Image from "next/image";
-import ScenGenRailwayBuilder from "@/components/ScenGenRailwayBuilder";
-import TrainSimulation from "@/components/TrainSimulation";
-
+import RailwayBuilder from '@/components/railway-builder';
+import TrainSimulation from '@/components/train-simulation';
 export default function Home() {
   return (
-  <div>
-    <ScenGenRailwayBuilder />
-    <TrainSimulation />
-  </div>
+    <div>
+      <RailwayBuilder />
+      <TrainSimulation />
+    </div>
   );
 }
